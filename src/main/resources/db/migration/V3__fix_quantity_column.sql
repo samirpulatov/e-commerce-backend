@@ -1,0 +1,1 @@
+ALTER TABLE cart_items CHANGE quanity quantity INT DEFAULT 1 NOT NULL;
