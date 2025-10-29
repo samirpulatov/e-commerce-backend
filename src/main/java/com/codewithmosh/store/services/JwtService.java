@@ -9,7 +9,9 @@ import java.util.Date;
 @Service
 public class JwtService {
     public String generateToken(String email) {
-        final long tokenExpiration = 86400; // 1 day
+        final long tokenExpiration = 86400; // 1 day in seconds
+
+        // Build and sign JWT token with email as subject
         return Jwts.builder()
                 .subject(email)
                 .issuedAt(new Date())
@@ -18,3 +20,4 @@ public class JwtService {
                 .compact();
     }
 }
+
