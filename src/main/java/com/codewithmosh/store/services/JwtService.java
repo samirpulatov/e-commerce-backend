@@ -1,5 +1,6 @@
 package com.codewithmosh.store.services;
 
+import com.codewithmosh.store.entities.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -15,12 +16,24 @@ public class JwtService {
     private String secret;
 
 
-    public String generateToken(String email) {
-        final long tokenExpiration = 86400; // 1 day in seconds
+    public String generateAccessToken(User user) {
+        final long tokenExpiration = 300; // 5 minutes
 
-        // Build and sign JWT token with email as subject
+        return generateAccessToken(user, tokenExpiration);
+    }
+
+    public String generateRefreshToken(User user) {
+        final long tokenExpiration = 604800; // 7 days
+
+        return generateAccessToken(user, tokenExpiration);
+    }
+
+    private String generateAccessToken(User user, long tokenExpiration) {
+        // Build and sign JWT token with userId as subject
         return Jwts.builder()
-                .subject(email)
+                .subject(user.getId().toString())
+                .claim("email", user.getEmail())
+                .claim("name", user.getName())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + 1000 * tokenExpiration))
                 .signWith(Keys.hmacShaKeyFor(secret.getBytes()))
@@ -51,8 +64,8 @@ public class JwtService {
     }
 
 
-    public String getEmailFromToken(String token) {
-        return getClaims(token).getSubject();
+    public Long getUserIdFromToken(String token) {
+        return Long.valueOf(getClaims(token).getSubject());
     }
 
 }
