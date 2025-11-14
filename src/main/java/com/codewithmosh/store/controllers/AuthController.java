@@ -1,4 +1,5 @@
 package com.codewithmosh.store.controllers;
+import com.codewithmosh.store.config.JwtConfig;
 import com.codewithmosh.store.dtos.JwtResponse;
 import com.codewithmosh.store.dtos.LoginRequest;
 import com.codewithmosh.store.dtos.UserDto;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final JwtConfig jwtConfig;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
@@ -41,24 +43,38 @@ public class AuthController {
         var accessToken =  jwtService.generateAccessToken(user);    // Generate JWT accessTokentoken after successful authentication;
         var refreshToken = jwtService.generateRefreshToken(user);
 
-        var cookie = new Cookie("refreshToken", refreshToken);
+        var cookie = new Cookie("refreshToken", refreshToken.toString());
         cookie.setHttpOnly(true);
         cookie.setPath("/auth/refresh");
-        cookie.setMaxAge(604800); //7 days
+        cookie.setMaxAge(jwtConfig.getRefreshTokenExpiration()); //7 days
         cookie.setSecure(true); // only HTTPS connections
         response.addCookie(cookie);
 
         // Return JWT accessTokentoken in response
-        return ResponseEntity.ok(new JwtResponse(accessToken));
+        return ResponseEntity.ok(new JwtResponse(accessToken.toString()));
     }
-    @PostMapping("/validate")
-    public boolean validate(@RequestHeader("Authorization") String authHeader) {
+//    @PostMapping("/validate")
+//    public boolean validate(@RequestHeader("Authorization") String authHeader) {
+//
+//        System.out.println("Validate called");
+//        var token = authHeader.replace("Bearer ", "");
+//        return jwtService.validateToken(token);
+//    }
 
-        System.out.println("Validate called");
-        var token = authHeader.replace("Bearer ", "");
-        return jwtService.validateToken(token);
+    @PostMapping("/refresh")
+    public ResponseEntity<JwtResponse> refresh(@CookieValue(value = "refreshToken")String refreshToken) {
+
+        var jwt = jwtService.parseToken(refreshToken);
+        if(jwt == null || jwt.isExpired()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        var user = userRepository.findById(jwt.getUserId()).orElseThrow();
+        var accessToken = jwtService.generateAccessToken(user);
+
+        return ResponseEntity.ok(new JwtResponse(accessToken.toString()));
+
     }
-
     @GetMapping("/me")
     public ResponseEntity<UserDto> me() {
             var authentication = SecurityContextHolder.getContext().getAuthentication();
