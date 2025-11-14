@@ -1,4 +1,3 @@
-# e-commerce-backend
 # E-Commerce Backend
 
 A modular, scalable, and secure backend for an e-commerce application built with **Spring Boot**, featuring JWT authentication, role-based authorization, cart management, product APIs, and full Docker support.
